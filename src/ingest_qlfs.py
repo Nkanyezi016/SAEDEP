@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 RAW_DIR = Path("data/raw")
-SOURCE_FILE = Path("data/sourceQLFS202602.csv")
+SOURCE_FILE = Path("data/source/QLFS202602.csv")
 OUTPUT_FILE = RAW_DIR / "QLFS202602.csv"
 
 def ingest_qlfs():
