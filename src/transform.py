@@ -27,3 +27,87 @@ def remove_uneccessary_records(df):
     df = df[df["Weight"] > 0]
         
     return df 
+
+def rename_cols(df):
+    """
+    Renames columns in the DataFrame to more descriptive names.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+    pd.DataFrame: DataFrame with renamed columns.
+    """
+    df = df.rename(columns={
+        "UQNO": "Unique_Questionnaire_Number",
+        "PERSONNO": "Person_Number",
+        "SURVEYDATE": "Survey_Date",
+        "Province": "Province",
+        "Metro_code": "Metro_Code",
+        "Geo_Type_Code": "Geo_Type_Code",
+        "Stratum": "Stratum",
+        "Q13GENDER": "Gender",
+        "Q14AGE": "Age",
+        "Q16MARITALSTATUS": "Marital_Status",
+        "Q17EDUCATION": "Education_Level",
+        "Q15POPULATION": "Population_Group",
+        "Q18FIELD": "Field_of_Study",
+        "Q19ATTE": "Attendance_Status",
+        "Status": "Employment_Status",
+        "Lfs_Status": "Labour_Force_Status",
+        "Unempl_Status": "Unemployment_Status",
+        "InactReason": "Reason_for_Inactivity",
+        "Indus": "Industry_Code",
+        "Occup": "Occupation_Code",
+        "PrevIndus": "Previous_Industry_Code",
+        "PrevOccup": "Previous_Occupation_Code",
+        "Sector": "Sector_Code",
+        "Infempl": "Informal_Employment_Status",
+        "Long_term_unempl": "Long_Term_Unemployment_Status",
+        "Underempl": "Underemployment_Status",
+        "Neet": "'Not in Education, Employment, or Training' Status",
+        'Graduates': 'Graduate Status',
+        'Education_status': 'Education Status',
+        'Age_grp1': 'Age Group',
+        'Hrswrk': 'Hours Worked',
+        'Weight': 'Weight'
+    })
+    
+    return df
+
+def convert_data_types(df):
+    """
+    Converts data types of specific columns in the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+    pd.DataFrame: DataFrame with converted data types.
+    """
+    ...
+    
+    return df
+
+def change_to_category(df):
+    ...
+    
+    return df
+
+def transform(df):
+    """
+    Transforms the DataFrame by applying a series of data cleaning and transformation steps.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+    pd.DataFrame: Transformed DataFrame.
+    """
+    df = remove_unneccessary_columns(df)
+    df = remove_uneccessary_records(df)
+    df = rename_cols(df)
+    df = convert_data_types(df)
+    df = change_to_category(df)
+    
+    return df
