@@ -27,3 +27,6 @@ def ingest_qlfs():
 
 if __name__ == "__main__":
     ingest_qlfs()
+
+#labor_data = pd.read_csv(SOURCE_FILE)
+# print(labor_data.columns)
