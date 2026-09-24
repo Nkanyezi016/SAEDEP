@@ -36,4 +36,24 @@ with DAG( dag_id="qlfs_data_pipeline",
          tags=["QLFS", "data-engineering"], 
          ) as dag:
 
-    extract = PythonOperator(
+            extract = PythonOperator(
+                  task_id = "extract_qlfs_data",
+                  python_callable = extract_task,
+            )
+
+            transform = PythonOperator(
+                  task_id = "transform_qlfs_data",
+                  python_callable = transform_task,
+            )
+
+            validate = PythonOperator(
+                  task_id = "validate_qlfs_data",
+                  python_callable = validate_task,
+            )
+
+            load = PythonOperator(
+                  task_id = "load_qlfs_data",
+                  python_callable = load_task,
+            )
+
+            extract >> transform >> validate >> load

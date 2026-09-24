@@ -3,7 +3,7 @@ import pandas as pd
 
 SOURCE_FILE = Path("data/source/QLFS202602.csv")
 
-def remove_unneccessary_columns(df):
+def remove_unnecessary_columns(df):
     """
     Removes unnecessary columns from the DataFrame.
 
@@ -21,7 +21,7 @@ def remove_unneccessary_columns(df):
     
     return df 
 
-def remove_uneccessary_records(df):
+def remove_unnecessary_records(df):
     df = df.dropna(subset=["Weight"])
     df = df[df["Weight"] > 0]
         
@@ -117,10 +117,17 @@ def transform(df):
     Returns:
     pd.DataFrame: Transformed DataFrame.
     """
-    df = remove_unneccessary_columns(df)
-    df = remove_uneccessary_records(df)
+    df = remove_unnecessary_columns(df)
+    df = remove_unnecessary_records(df)
     df = convert_data_types(df)
     df = change_to_category(df)
     df = rename_cols(df)
+
+    # print(df)
     
     return df
+
+# labor_data = pd.read_csv(SOURCE_FILE)
+# new_data = transform(labor_data)
+# print(new_data["PERSONNO"])
+
