@@ -2,7 +2,6 @@ from pathlib import Path
 import pandas as pd
 
 SOURCE_FILE = Path("data/source/QLFS202602.csv")
-labor_data = pd.read_csv(SOURCE_FILE)
 
 def remove_unneccessary_columns(df):
     """
@@ -85,12 +84,26 @@ def convert_data_types(df):
     Returns:
     pd.DataFrame: DataFrame with converted data types.
     """
-    ...
+    if "SURVEYDATE" in df.columns:
+        df["SURVEYDATE"] = pd.to_datetime(df["SURVEYDATE"], errors='coerce')
+
+    numeric_columns = [ "PERSONNO", "Metro_code", "Geo_Type_Code", "Stratum", "Q14AGE", "Hrswrk", "Weight" ]
+
+    for column in numeric_columns: 
+        df[column] = pd.to_numeric( df[column], errors="coerce" )
     
     return df
 
 def change_to_category(df):
-    ...
+    """
+    Converts specific columns in the DataFrame to categorical data type.
+    """
+
+    categorical_columns = [ "Province", "Q13GENDER", "Q16MARITALSTATUS", "Q17EDUCATION", "Q15POPULATION", "Q18FIELD", "Q19ATTE", "Status", "Lfs_Status", "Unempl_Status", "InactReason", "Indus", "Occup", "PrevIndus", "PrevOccup", "Sector", "Infempl", "Long_term_unempl", "Underempl", "Neet", "Graduates", "Education_status", "Age_grp1" ]
+
+    for column in categorical_columns:
+        if column in df.columns: 
+            df[column] = df[column].astype("category")
     
     return df
 
@@ -106,8 +119,8 @@ def transform(df):
     """
     df = remove_unneccessary_columns(df)
     df = remove_uneccessary_records(df)
-    df = rename_cols(df)
     df = convert_data_types(df)
     df = change_to_category(df)
+    df = rename_cols(df)
     
     return df
