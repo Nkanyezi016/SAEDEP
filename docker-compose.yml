@@ -1,0 +1,49 @@
+services:
+
+  airflow-apiserver:
+    build: .
+    image: saedep-airflow:latest
+    command: api-server
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - airflow-logs:/opt/airflow/logs
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    build: .
+    image: saedep-airflow:latest
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - airflow-logs:/opt/airflow/logs
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    build: .
+    image: saedep-airflow:latest
+    command: db migrate
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - airflow-logs:/opt/airflow/logs
+
+volumes:
+  airflow-logs:
+
