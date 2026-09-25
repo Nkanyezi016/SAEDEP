@@ -1,20 +1,54 @@
 services:
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Runs once on first init to create the separate "qlfs" warehouse
+      # database alongside Airflow's own "airflow" metadata database.
+      - ./sql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   airflow-apiserver:
     build: .
     image: saedep-airflow:latest
     command: api-server
     ports:
       - "8080:8080"
-    environment:
+    environment: &airflow-env
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # LocalExecutor needs a database that supports concurrent
+      # connections; Airflow's SQLite default doesn't, so its metadata
+      # database is pointed at the postgres service instead.
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # Connection details src/db.py uses for the QLFS warehouse (a
+      # separate database on the same postgres instance).
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: qlfs
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+      - ./sql:/opt/airflow/sql
       - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
+      - airflow-tmp:/opt/airflow/tmp
     depends_on:
+      postgres:
+        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
@@ -22,15 +56,17 @@ services:
     build: .
     image: saedep-airflow:latest
     command: scheduler
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    environment: *airflow-env
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+      - ./sql:/opt/airflow/sql
       - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
+      - airflow-tmp:/opt/airflow/tmp
     depends_on:
+      postgres:
+        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
@@ -38,12 +74,14 @@ services:
     build: .
     image: saedep-airflow:latest
     command: db migrate
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    environment: *airflow-env
     volumes:
       - airflow-logs:/opt/airflow/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   airflow-logs:
-
+  airflow-tmp:
+  postgres-data:

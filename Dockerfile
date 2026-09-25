@@ -8,4 +8,5 @@ RUN pip install --no-cache-dir -r /requirements.txt
 
 COPY dags /opt/airflow/dags
 COPY src /opt/airflow/src
+COPY sql /opt/airflow/sql
 
