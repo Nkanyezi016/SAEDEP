@@ -1,0 +1,6 @@
+# Test-only dependencies: not installed into the Airflow image (see
+# Dockerfile), only used for running the test suite locally / in CI.
+-r requirements.txt
+pytest~=8.3
+duckdb~=1.1
+duckdb-engine~=0.13

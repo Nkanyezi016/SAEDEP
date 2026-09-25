@@ -1,0 +1,7 @@
+# Installed on top of the apache/airflow base image (which already
+# provides Airflow itself). Pinned to major.minor so patch releases don't
+# silently change pipeline behaviour.
+pandas~=2.2
+numpy~=1.26
+SQLAlchemy~=2.0
+psycopg2-binary~=2.9
