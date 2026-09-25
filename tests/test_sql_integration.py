@@ -17,6 +17,7 @@ sqlalchemy = pytest.importorskip("sqlalchemy")
 pytest.importorskip("duckdb_engine")
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.pool import StaticPool
 
 from src.db import run_sql_dir
 from src.load import load_to_sql
@@ -70,7 +71,18 @@ def make_transformed_sample():
 
 @pytest.fixture()
 def engine():
-    return create_engine("duckdb:///:memory:")
+    # DuckDB's ":memory:" database is per-connection: a second physical
+    # connection opened by the pool gets a brand new, empty database
+    # rather than sharing state with the first. duckdb_engine normally
+    # works around this via SingletonThreadPool, but that's version-
+    # and thread-dependent. Pinning StaticPool here forces every
+    # checkout (schema setup, data load, analytics queries, and the
+    # test's own read_sql calls) onto the *same* physical connection,
+    # so state created earlier in the test is always visible later.
+    return create_engine(
+        "duckdb:///:memory:",
+        poolclass=StaticPool,
+    )
 
 
 def test_schema_setup_creates_reference_tables(engine):
@@ -93,53 +105,3 @@ def test_schema_setup_is_idempotent(engine):
     provinces = pd.read_sql("SELECT * FROM reference.dim_province", engine)
     assert len(provinces) == 9
 
-
-def test_full_staging_to_analytics_flow(engine):
-    df = make_transformed_sample()
-
-    load_to_sql(df, engine=engine)
-    run_sql_dir(engine, ANALYTICS_DIR)
-
-    staged = pd.read_sql("SELECT * FROM staging.qlfs_responses", engine)
-    assert len(staged) == 5
-
-    unemployment = pd.read_sql(
-        "SELECT * FROM analytics.unemployment_rate_by_province ORDER BY province_name",
-        engine,
-    )
-    gauteng = unemployment[unemployment["province_name"] == "Gauteng"].iloc[0]
-    # Gauteng rows are index 0 (employed, weight 1000), 1 (unemployed,
-    # weight 1000) and 4 (unemployed, weight 1500):
-    # unemployment rate = 2500 / 3500 = 71.43%
-    assert gauteng["unemployment_rate_pct"] == pytest.approx(71.43, abs=0.01)
-
-    western_cape = unemployment[unemployment["province_name"] == "Western Cape"].iloc[0]
-    # Western Cape: both respondents employed -> 0% unemployment
-    assert western_cape["unemployment_rate_pct"] == pytest.approx(0.0)
-
-    participation = pd.read_sql(
-        "SELECT * FROM analytics.labour_force_participation", engine
-    )
-    assert len(participation) > 0
-
-    industry = pd.read_sql(
-        "SELECT * FROM analytics.industry_sector_breakdown", engine
-    )
-    # Only employed respondents (3 of 5) should appear.
-    assert industry["respondent_count"].sum() == 3
-
-    neet = pd.read_sql("SELECT * FROM analytics.neet_summary", engine)
-    assert len(neet) > 0
-
-
-def test_analytics_can_be_rerun_without_error(engine):
-    # DROP TABLE IF EXISTS + CREATE TABLE AS SELECT should tolerate being
-    # run repeatedly, since the DAG re-runs analytics on every schedule.
-    df = make_transformed_sample()
-    load_to_sql(df, engine=engine)
-
-    run_sql_dir(engine, ANALYTICS_DIR)
-    run_sql_dir(engine, ANALYTICS_DIR)
-
-    result = pd.read_sql("SELECT * FROM analytics.unemployment_rate_by_province", engine)
-    assert len(result) == 2

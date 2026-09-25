@@ -1,0 +1,21 @@
+-- Weighted official (strict) unemployment rate by province:
+--   unemployed / (employed + unemployed), using the QLFS survey weight
+--   so the result estimates the population rate, not the sample rate.
+DROP TABLE IF EXISTS analytics.unemployment_rate_by_province;
+
+CREATE TABLE analytics.unemployment_rate_by_province AS
+SELECT
+    p.province_name,
+    s.province_code,
+    SUM(CASE WHEN s.employment_status_code = 1 THEN s.survey_weight ELSE 0 END) AS employed_weighted,
+    SUM(CASE WHEN s.employment_status_code = 2 THEN s.survey_weight ELSE 0 END) AS unemployed_weighted,
+    SUM(CASE WHEN s.employment_status_code IN (1, 2) THEN s.survey_weight ELSE 0 END) AS labour_force_weighted,
+    ROUND(
+        100.0 * SUM(CASE WHEN s.employment_status_code = 2 THEN s.survey_weight ELSE 0 END)
+        / NULLIF(SUM(CASE WHEN s.employment_status_code IN (1, 2) THEN s.survey_weight ELSE 0 END), 0),
+        2
+    ) AS unemployment_rate_pct
+FROM staging.qlfs_responses s
+JOIN reference.dim_province p ON p.province_code = s.province_code
+GROUP BY p.province_name, s.province_code
+ORDER BY unemployment_rate_pct DESC;
