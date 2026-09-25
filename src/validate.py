@@ -1,9 +1,12 @@
 """
 This checks if the transformed data is clean, structurally correct and safe to load.
 """
-
+import numpy as np
 import pandas as pd
 
+from src.transform import WORKING_AGE_MIN
+
+MAX_PLAUSIBLE_AGE = 120
 
 REQUIRED_COLUMNS = [
     "Unique_Questionnaire_Number",
@@ -80,6 +83,32 @@ def validate_nulls(df):
             f"Null values found in critical columns:\n"
             f"{null_counts}"
         )
+
+def validate_no_infinite_values(df):
+    """
+    Check that no `inf`/`-inf` values remain in numeric columns.
+
+    Stats SA encodes "not applicable" skip-pattern answers as literal
+    `inf` in the raw QLFS extract (e.g. hours worked for someone who
+    isn't employed). The transform stage converts these to nulls; if any
+    slip through, `inf` still satisfies "is numeric" and "is not
+    negative" checks, so it needs its own explicit check.
+    """
+
+    numeric_df = df.select_dtypes(include="number")
+
+    inf_counts = numeric_df.apply(
+        lambda column: np.isinf(column.astype("float64")).sum()
+    )
+
+    inf_counts = inf_counts[inf_counts > 0]
+
+    if not inf_counts.empty:
+        raise ValueError(
+            f"Infinite values found in numeric columns:\n"
+            f"{inf_counts}"
+        )
+
 
 def validate_data_types(df):
     """
@@ -198,6 +227,7 @@ def validate(df):
 
     validate_columns(df)
     validate_nulls(df)
+    validate_no_infinite_values(df)
     validate_data_types(df)
     validate_age(df)
     validate_hours_worked(df)
