@@ -212,6 +212,17 @@ def transform(df):
     
     return df
 
+PROCESSED_FILE = Path("data/processed/QLFS202602_processed.csv")
+
+if __name__ == "__main__":
+    labor_data = pd.read_csv(SOURCE_FILE)
+    new_data = transform(labor_data)
+
+    PROCESSED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    new_data.to_csv(PROCESSED_FILE, index=False)
+
+    print(f"Processed data saved to {PROCESSED_FILE}")
+
 # labor_data = pd.read_csv(SOURCE_FILE)
 # new_data = transform(labor_data)
 # print(new_data["PERSONNO"])

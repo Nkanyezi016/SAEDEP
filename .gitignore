@@ -1,2 +1,4 @@
-# Data files
-data/
+# Raw and source data
+data/raw/
+data/source/QLFS202602.csv
+
