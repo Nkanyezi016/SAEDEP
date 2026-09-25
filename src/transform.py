@@ -155,23 +155,26 @@ def rename_cols(df):
     return df
 
 def convert_data_types(df):
-    """
-    Converts data types of specific columns in the DataFrame.
 
-    Parameters:
-    df (pd.DataFrame): The input DataFrame.
-
-    Returns:
-    pd.DataFrame: DataFrame with converted data types.
-    """
     if "SURVEYDATE" in df.columns:
-        df["SURVEYDATE"] = pd.to_datetime(df["SURVEYDATE"], errors='coerce')
+        df["SURVEYDATE"] = parse_survey_date(df["SURVEYDATE"])
 
-    numeric_columns = [ "PERSONNO", "Metro_code", "Geo_Type_Code", "Stratum", "Q14AGE", "Hrswrk", "Weight" ]
+    numeric_columns = [
+        "PERSONNO",
+        "Metro_code",
+        "Geo_Type_Code",
+        "Stratum",
+        "Q14AGE",
+        "Hrswrk",
+        "Weight"
+    ]
 
-    for column in numeric_columns: 
-        df[column] = pd.to_numeric( df[column], errors="coerce" )
-    
+    for column in numeric_columns:
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
+
     return df
 
 def change_to_category(df):

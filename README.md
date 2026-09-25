@@ -103,4 +103,55 @@ Two outputs:
 - A flat CSV snapshot of the processed data (`load_data`), useful for quick inspection without a database connection.
 - The validated data loaded into a `staging.qlfs_responses` table in PostgreSQL (`load_to_sql`), with pandas column names mapped to clean, quoting-free SQL column names (`SQL_COLUMN_MAP` in `src/load.py`).
 
+### 7. SQL layer (`sql/`)
+
+Plain SQL, run by `src/db.py` rather than a dedicated tool like dbt — simple enough for this project's scope, and testable against any SQLAlchemy-compatible engine.
+
+- `sql/schema/` — idempotent DDL: creates the `staging` / `reference` / `analytics` schemas, and two small reference tables (`reference.dim_province` using Stats SA's standard province coding, `reference.dim_employment_status`). Safe to re-run; reference tables are truncated and reloaded each time.
+- `sql/analytics/` — materializes analytical tables from `staging.qlfs_responses`:
+  - `unemployment_rate_by_province.sql` — weighted official unemployment rate by province
+  - `neet_summary.sql` — weighted NEET (Not in Education, Employment or Training) share by province and age group
+  - `industry_sector_breakdown.sql` — weighted employed population by industry and sector
+  - `labour_force_participation.sql` — weighted labour force participation rate by province and gender
+
+  All aggregates use the QLFS survey weight (`survey_weight`), so results estimate population-level rates rather than raw sample counts.
+
+### 8. Analysis
+
+The materialized tables in the `analytics` schema are ready to query directly, or point a BI tool / notebook at the same Postgres database.
+
+## Running the pipeline
+
+```bash
+docker compose up --build
+```
+
+This starts Postgres (used both as Airflow's metadata database and, as a separate `qlfs` database on the same instance, the analytics warehouse), then Airflow's scheduler and API server. The Airflow UI is available at `http://localhost:8080`; trigger the `qlfs_data_pipeline` DAG to run the full extract → transform → validate → load → analytics flow.
+
+## Running tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The test suite runs entirely without Docker or a live Postgres server: SQL schema/analytics tests run against an in-memory DuckDB database (`tests/test_sql_integration.py`), since DuckDB understands the same plain SQL used in `sql/`.
+
+## Project structure
+
+```
+dags/pipeline.py         Airflow DAG wiring the pipeline stages together
+src/extract.py            Reads the raw QLFS CSV
+src/transform.py          Cleans, filters and restructures the data
+src/validate.py           Data-quality checks before loading
+src/load.py                CSV snapshot + Postgres load
+src/db.py                  SQLAlchemy engine + .sql file runner
+sql/schema/                 Schema and reference table DDL
+sql/analytics/              Analytical queries materialized as tables
+sql/init/                    Postgres container init script (creates the qlfs database)
+tests/                        Unit tests for extract/transform/validate/load + SQL integration tests
+data/source/                 Raw QLFS CSV (not committed)
+data/raw/, data/processed/  Pipeline working directories
+```
+
 
