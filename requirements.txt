@@ -3,5 +3,4 @@
 # silently change pipeline behaviour.
 pandas~=2.2
 numpy~=1.26
-SQLAlchemy~=2.0
 psycopg2-binary~=2.9

@@ -50,6 +50,8 @@ services:
       # Airflow metadata database
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
 
+      PYTHONPATH: /opt/airflow
+      
       # QLFS PostgreSQL warehouse
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
