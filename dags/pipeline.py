@@ -110,4 +110,4 @@ with DAG(
         python_callable=run_analytics_task,
     )
 
-    setup_schema >> extract >> transform_op >> validate_op >> load >> run_analytics
+    extract >> transform_op >> validate_op >> setup_schema >> load >> run_analytics
